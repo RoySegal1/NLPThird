@@ -131,5 +131,6 @@ def predict_next_word(model, sequence):
 
 # Example usage
 test_sequence = lemmas_turing[:sequence_length]
+# print(test_sequence)
 next_word = predict_next_word(model, test_sequence)
 print(f"Next word prediction: {next_word}")
