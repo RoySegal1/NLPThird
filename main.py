@@ -8,8 +8,6 @@ from nltk.tokenize import sent_tokenize
 import tensorflow as tf
 
 # Function to tokenize text
-def tokenize(text):
-    return word_tokenize(text)
 
 # Function to lemmatize tokens
 def lemmatize(tokens):
@@ -28,7 +26,7 @@ with open('data_turing.txt', 'r', encoding='utf-8') as file:
 # Tokenize, preprocess, and lemmatize text
 sentences_turing = sent_tokenize(data_turing)
 words_turing_tokenized = [preprocess_text(word_tokenize(sentence)) for sentence in sentences_turing]
-tokens_turing = tokenize(data_turing)
+tokens_turing = word_tokenize(data_turing)
 filtered_tokens_turing = preprocess_text(tokens_turing)
 lemmas_turing = lemmatize(filtered_tokens_turing)
 
@@ -54,14 +52,15 @@ similar_words = w2v_model.wv.most_similar('work')
 print("Most similar words to 'work':", similar_words)
 
 # Create sequences of words for the RNN model
-sequence_length = 5
+sequence_length = 8
 sequences = []
-for i in range(sequence_length, len(lemmas_turing)):
-    seq = lemmas_turing[i-sequence_length:i+1]
-    sequences.append(seq)
+for sentence in words_turing_tokenized:
+    for i in range(sequence_length, len(sentence)):
+        seq = sentence[i-sequence_length:i+1]
+        sequences.append(seq)
 
 # Create the vocabulary and map words to integers
-vocab = sorted(set(lemmas_turing))
+vocab = sorted(set(filtered_tokens_turing))
 word_to_int = {word: idx for idx, word in enumerate(vocab)}
 int_to_word = {idx: word for idx, word in enumerate(vocab)}
 
@@ -122,7 +121,7 @@ def predict_next_word_lstm(model, sequence):
     return next_word
 
 # Example usage
-test_sequence = lemmas_turing[:sequence_length]
+test_sequence = words_turing_tokenized[2][:8]
 print(f"Test sequence: {test_sequence}")
 
 # Predict next word using RNN
@@ -132,53 +131,52 @@ print(f"RNN next word prediction: {next_word_rnn}")
 # Predict next word using LSTM
 next_word_lstm = predict_next_word_lstm(lstm_model, test_sequence)
 print(f"LSTM next word prediction: {next_word_lstm}")
-
-# Compare performance
-import matplotlib.pyplot as plt
-
-# Plot training & validation accuracy values
-plt.figure(figsize=(12, 6))
-
-plt.subplot(1, 2, 1)
-plt.plot(rnn_history.history['accuracy'])
-plt.plot(rnn_history.history['val_accuracy'])
-plt.title('RNN Model Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend(['Train', 'Validation'], loc='upper left')
-
-plt.subplot(1, 2, 2)
-plt.plot(lstm_history.history['accuracy'])
-plt.plot(lstm_history.history['val_accuracy'])
-plt.title('LSTM Model Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend(['Train', 'Validation'], loc='upper left')
-
-plt.tight_layout()
-plt.show()
-
-# Plot training & validation loss values
-plt.figure(figsize=(12, 6))
-
-plt.subplot(1, 2, 1)
-plt.plot(rnn_history.history['loss'])
-plt.plot(rnn_history.history['val_loss'])
-plt.title('RNN Model Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend(['Train', 'Validation'], loc='upper left')
-
-plt.subplot(1, 2, 2)
-plt.plot(lstm_history.history['loss'])
-plt.plot(lstm_history.history['val_loss'])
-plt.title('LSTM Model Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend(['Train', 'Validation'], loc='upper left')
-
-
-
-
-plt.tight_layout()
-plt.show()
+# # Compare performance
+# import matplotlib.pyplot as plt
+#
+# # Plot training & validation accuracy values
+# plt.figure(figsize=(12, 6))
+#
+# plt.subplot(1, 2, 1)
+# plt.plot(rnn_history.history['accuracy'])
+# plt.plot(rnn_history.history['val_accuracy'])
+# plt.title('RNN Model Accuracy')
+# plt.xlabel('Epoch')
+# plt.ylabel('Accuracy')
+# plt.legend(['Train', 'Validation'], loc='upper left')
+#
+# plt.subplot(1, 2, 2)
+# plt.plot(lstm_history.history['accuracy'])
+# plt.plot(lstm_history.history['val_accuracy'])
+# plt.title('LSTM Model Accuracy')
+# plt.xlabel('Epoch')
+# plt.ylabel('Accuracy')
+# plt.legend(['Train', 'Validation'], loc='upper left')
+#
+# plt.tight_layout()
+# plt.show()
+#
+# # Plot training & validation loss values
+# plt.figure(figsize=(12, 6))
+#
+# plt.subplot(1, 2, 1)
+# plt.plot(rnn_history.history['loss'])
+# plt.plot(rnn_history.history['val_loss'])
+# plt.title('RNN Model Loss')
+# plt.xlabel('Epoch')
+# plt.ylabel('Loss')
+# plt.legend(['Train', 'Validation'], loc='upper left')
+#
+# plt.subplot(1, 2, 2)
+# plt.plot(lstm_history.history['loss'])
+# plt.plot(lstm_history.history['val_loss'])
+# plt.title('LSTM Model Loss')
+# plt.xlabel('Epoch')
+# plt.ylabel('Loss')
+# plt.legend(['Train', 'Validation'], loc='upper left')
+#
+#
+#
+#
+# plt.tight_layout()
+# plt.show()
