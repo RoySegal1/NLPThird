@@ -178,5 +178,7 @@ plt.ylabel('Loss')
 plt.legend(['Train', 'Validation'], loc='upper left')
 
 
+
+
 plt.tight_layout()
 plt.show()
