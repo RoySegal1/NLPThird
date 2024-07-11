@@ -198,11 +198,11 @@ with open('data_turing.txt', 'r', encoding='utf-8') as file:
 # Select 5 partial sentences from your corpus
 sentences_turing = sent_tokenize(data_turing)
 partial_sentences = [
-    "Alan Turing was a pioneering computer scientist who",
-    "The concept of artificial intelligence",
-    "In 1950, Turing proposed",
-    "One of Turing's most famous contributions",
-    "The Turing Test is a measure of"
+    "He was highly influential in the development of",
+    "Turing devised techniques for",
+    "Despite these accomplishments, he was never fully",
+    "After graduating from Sherborne",
+    "Turing spent most of his time studying"
 ]
 # Find original complete sentences
 original_sentences = [s for s in sentences_turing if any(ps in s for ps in partial_sentences)]
@@ -224,8 +224,5 @@ for i, partial_sentence in enumerate(partial_sentences):
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
     print(f"Original: {partial_sentence}\nGenerated: {generated_text}\n")
 
-# Print original complete sentences
-for original_sentence in original_sentences:
-    print(f"Original complete sentence: {original_sentence}\n")
 # Optional: Fine-tune the GPT-2 model on your dataset (if you have a specific dataset)
 # Refer to Hugging Face's documentation for fine-tuning instructions: https://huggingface.co/transformers/training.html
