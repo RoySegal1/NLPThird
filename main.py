@@ -131,52 +131,101 @@ print(f"RNN next word prediction: {next_word_rnn}")
 # Predict next word using LSTM
 next_word_lstm = predict_next_word_lstm(lstm_model, test_sequence)
 print(f"LSTM next word prediction: {next_word_lstm}")
-# # Compare performance
-# import matplotlib.pyplot as plt
-#
-# # Plot training & validation accuracy values
-# plt.figure(figsize=(12, 6))
-#
-# plt.subplot(1, 2, 1)
-# plt.plot(rnn_history.history['accuracy'])
-# plt.plot(rnn_history.history['val_accuracy'])
-# plt.title('RNN Model Accuracy')
-# plt.xlabel('Epoch')
-# plt.ylabel('Accuracy')
-# plt.legend(['Train', 'Validation'], loc='upper left')
-#
-# plt.subplot(1, 2, 2)
-# plt.plot(lstm_history.history['accuracy'])
-# plt.plot(lstm_history.history['val_accuracy'])
-# plt.title('LSTM Model Accuracy')
-# plt.xlabel('Epoch')
-# plt.ylabel('Accuracy')
-# plt.legend(['Train', 'Validation'], loc='upper left')
-#
-# plt.tight_layout()
-# plt.show()
-#
-# # Plot training & validation loss values
-# plt.figure(figsize=(12, 6))
-#
-# plt.subplot(1, 2, 1)
-# plt.plot(rnn_history.history['loss'])
-# plt.plot(rnn_history.history['val_loss'])
-# plt.title('RNN Model Loss')
-# plt.xlabel('Epoch')
-# plt.ylabel('Loss')
-# plt.legend(['Train', 'Validation'], loc='upper left')
-#
-# plt.subplot(1, 2, 2)
-# plt.plot(lstm_history.history['loss'])
-# plt.plot(lstm_history.history['val_loss'])
-# plt.title('LSTM Model Loss')
-# plt.xlabel('Epoch')
-# plt.ylabel('Loss')
-# plt.legend(['Train', 'Validation'], loc='upper left')
-#
-#
-#
-#
-# plt.tight_layout()
-# plt.show()
+# Compare performance
+import matplotlib.pyplot as plt
+
+# Plot training & validation accuracy values
+plt.figure(figsize=(12, 6))
+
+plt.subplot(1, 2, 1)
+plt.plot(rnn_history.history['accuracy'])
+plt.plot(rnn_history.history['val_accuracy'])
+plt.title('RNN Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend(['Train', 'Validation'], loc='upper left')
+
+plt.subplot(1, 2, 2)
+plt.plot(lstm_history.history['accuracy'])
+plt.plot(lstm_history.history['val_accuracy'])
+plt.title('LSTM Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend(['Train', 'Validation'], loc='upper left')
+
+plt.tight_layout()
+plt.show()
+
+# Plot training & validation loss values
+plt.figure(figsize=(12, 6))
+
+plt.subplot(1, 2, 1)
+plt.plot(rnn_history.history['loss'])
+plt.plot(rnn_history.history['val_loss'])
+plt.title('RNN Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend(['Train', 'Validation'], loc='upper left')
+
+plt.subplot(1, 2, 2)
+plt.plot(lstm_history.history['loss'])
+plt.plot(lstm_history.history['val_loss'])
+plt.title('LSTM Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend(['Train', 'Validation'], loc='upper left')
+
+
+plt.tight_layout()
+plt.show()
+#We can see from the graphs that their is high variance,
+# and very low bias which can indicate over fitting ,
+# we assume that is the case because of the small corpus size.
+
+
+import torch
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
+import nltk
+from nltk.tokenize import sent_tokenize
+
+# Ensure NLTK resources are available
+nltk.download('punkt')
+
+# Load text data
+with open('data_turing.txt', 'r', encoding='utf-8') as file:
+    data_turing = file.read()
+
+# Select 5 partial sentences from your corpus
+sentences_turing = sent_tokenize(data_turing)
+partial_sentences = [
+    "Alan Turing was a pioneering computer scientist who",
+    "The concept of artificial intelligence",
+    "In 1950, Turing proposed",
+    "One of Turing's most famous contributions",
+    "The Turing Test is a measure of"
+]
+# Find original complete sentences
+original_sentences = [s for s in sentences_turing if any(ps in s for ps in partial_sentences)]
+
+# Load the pre-trained GPT-2 model and tokenizer
+model_name = 'gpt2'  # or your fine-tuned model path
+tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+model = GPT2LMHeadModel.from_pretrained(model_name)
+
+# Generate completions for each partial sentence
+for i, partial_sentence in enumerate(partial_sentences):
+    # Encode the input text
+    input_ids = tokenizer.encode(partial_sentence, return_tensors='pt')
+
+    # Generate text
+    output = model.generate(input_ids, max_length=50, num_return_sequences=1)
+
+    # Decode and print the output
+    generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+    print(f"Original: {partial_sentence}\nGenerated: {generated_text}\n")
+
+# Print original complete sentences
+for original_sentence in original_sentences:
+    print(f"Original complete sentence: {original_sentence}\n")
+# Optional: Fine-tune the GPT-2 model on your dataset (if you have a specific dataset)
+# Refer to Hugging Face's documentation for fine-tuning instructions: https://huggingface.co/transformers/training.html
