@@ -6,18 +6,40 @@ from collections import Counter
 from gensim.models import Word2Vec
 from nltk.tokenize import sent_tokenize
 import tensorflow as tf
+import string
+import sys
 
+sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf-8', buffering=1)
 # Function to tokenize text
+stopwords = set(nltk.corpus.stopwords.words('english'))
+
 
 # Function to lemmatize tokens
 def lemmatize(tokens):
     lemmatizer = WordNetLemmatizer()
     return [lemmatizer.lemmatize(token) for token in tokens]
 
+
 # Function to remove stopwords and punctuation, and convert to lowercase
 def preprocess_text(tokens):
-    stopwords = set(nltk.corpus.stopwords.words('english'))
     return [token.lower() for token in tokens if token.lower() not in stopwords and token.isalpha()]
+
+
+# Define text preprocessing function
+def preprocess_text2(text):
+    # Lowercase
+    text = text.lower()
+    # Remove punctuation
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    # Tokenize
+    words = word_tokenize(text)
+    # Remove stopwords
+    words = [word for word in words if word not in stopwords]
+    # Lemmatize
+    lemmatizer = WordNetLemmatizer()
+    words = [lemmatizer.lemmatize(word) for word in words]
+    return ' '.join(words)
+
 
 # Load text data
 with open('data_turing.txt', 'r', encoding='utf-8') as file:
@@ -26,6 +48,7 @@ with open('data_turing.txt', 'r', encoding='utf-8') as file:
 # Tokenize, preprocess, and lemmatize text
 sentences_turing = sent_tokenize(data_turing)
 words_turing_tokenized = [preprocess_text(word_tokenize(sentence)) for sentence in sentences_turing]
+sentences_turing_preprocessed = [preprocess_text2(sentence) for sentence in sentences_turing]
 tokens_turing = word_tokenize(data_turing)
 filtered_tokens_turing = preprocess_text(tokens_turing)
 lemmas_turing = lemmatize(filtered_tokens_turing)
@@ -56,7 +79,7 @@ sequence_length = 8
 sequences = []
 for sentence in words_turing_tokenized:
     for i in range(sequence_length, len(sentence)):
-        seq = sentence[i-sequence_length:i+1]
+        seq = sentence[i - sequence_length:i + 1]
         sequences.append(seq)
 
 # Create the vocabulary and map words to integers
@@ -82,7 +105,8 @@ for word, idx in word_to_int.items():
 
 # Build the RNN model with the pre-trained embeddings
 rnn_model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(input_dim=len(vocab), output_dim=embedding_dim, weights=[embedding_matrix], input_length=sequence_length, trainable=False),
+    tf.keras.layers.Embedding(input_dim=len(vocab), output_dim=embedding_dim, weights=[embedding_matrix],
+                              input_length=sequence_length, trainable=False),
     tf.keras.layers.SimpleRNN(100, return_sequences=False),
     tf.keras.layers.Dense(len(vocab), activation='softmax')
 ])
@@ -91,7 +115,8 @@ rnn_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['a
 
 # Build the LSTM model with the pre-trained embeddings
 lstm_model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(input_dim=len(vocab), output_dim=embedding_dim, weights=[embedding_matrix], input_length=sequence_length, trainable=False),
+    tf.keras.layers.Embedding(input_dim=len(vocab), output_dim=embedding_dim, weights=[embedding_matrix],
+                              input_length=sequence_length, trainable=False),
     tf.keras.layers.LSTM(100, return_sequences=False),
     tf.keras.layers.Dense(len(vocab), activation='softmax')
 ])
@@ -104,6 +129,7 @@ rnn_history = rnn_model.fit(X, y, epochs=10, batch_size=64, validation_split=0.2
 # Train the LSTM model
 lstm_history = lstm_model.fit(X, y, epochs=10, batch_size=64, validation_split=0.2)
 
+
 # Function to predict the next word using the RNN model
 def predict_next_word_rnn(model, sequence):
     sequence = [word_to_int[word] for word in sequence]
@@ -112,6 +138,7 @@ def predict_next_word_rnn(model, sequence):
     next_word = int_to_word[np.argmax(prediction)]
     return next_word
 
+
 # Function to predict the next word using the LSTM model
 def predict_next_word_lstm(model, sequence):
     sequence = [word_to_int[word] for word in sequence]
@@ -119,6 +146,7 @@ def predict_next_word_lstm(model, sequence):
     prediction = model.predict(sequence, verbose=0)
     next_word = int_to_word[np.argmax(prediction)]
     return next_word
+
 
 # Example usage
 test_sequence = words_turing_tokenized[2][:8]
@@ -175,7 +203,6 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend(['Train', 'Validation'], loc='upper left')
 
-
 plt.tight_layout()
 plt.show()
 #We can see from the graphs that their is high variance,
@@ -185,11 +212,12 @@ plt.show()
 
 import torch
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformers import pipeline
 import nltk
 from nltk.tokenize import sent_tokenize
 
 # Ensure NLTK resources are available
-nltk.download('punkt')
+# nltk.download('punkt')
 
 # Load text data
 with open('data_turing.txt', 'r', encoding='utf-8') as file:
@@ -199,7 +227,7 @@ with open('data_turing.txt', 'r', encoding='utf-8') as file:
 sentences_turing = sent_tokenize(data_turing)
 partial_sentences = [
     "He was highly influential in the development of",
-    "Turing devised techniques for",
+    "Turing devised techniques",
     "Despite these accomplishments, he was never fully",
     "After graduating from Sherborne",
     "Turing spent most of his time studying"
@@ -224,5 +252,69 @@ for i, partial_sentence in enumerate(partial_sentences):
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
     print(f"Original: {partial_sentence}\nGenerated: {generated_text}\n")
 
-# Optional: Fine-tune the GPT-2 model on your dataset (if you have a specific dataset)
-# Refer to Hugging Face's documentation for fine-tuning instructions: https://huggingface.co/transformers/training.html
+
+sentiment_pipeline = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
+# Perform sentiment analysis on each sentence
+sentiments = sentiment_pipeline(sentences_turing)
+
+# Initialize counters
+very_positive_count = 0
+positive_count = 0
+neutral_count = 0
+negative_count = 0
+very_negative_count = 0
+
+very_positive_examples = []
+positive_examples = []
+neutral_examples = []
+negative_examples = []
+very_negative_examples = []
+
+# Count sentiments and store examples
+for sentence, sentiment in zip(sentences_turing, sentiments):
+    label = sentiment['label']
+    if label == '1 star':
+        very_negative_count += 1
+        very_negative_examples.append(sentence)
+    elif label == '2 stars':
+        negative_count += 1
+        negative_examples.append(sentence)
+    elif label == '3 stars':
+        neutral_count += 1
+        neutral_examples.append(sentence)
+    elif label == '4 stars':
+        positive_count += 1
+        positive_examples.append(sentence)
+    elif label == '5 stars':
+        very_positive_count += 1
+        very_positive_examples.append(sentence)
+
+# Calculate percentages
+total_sentences = len(sentences_turing)
+very_positive_percentage = (very_positive_count / total_sentences) * 100
+positive_percentage = (positive_count / total_sentences) * 100
+neutral_percentage = (neutral_count / total_sentences) * 100
+negative_percentage = (negative_count / total_sentences) * 100
+very_negative_percentage = (very_negative_count / total_sentences) * 100
+
+# Print the results
+print(f"Total Sentences: {total_sentences}")
+print(f"Very Positive Sentences: {very_positive_percentage:.2f}%")
+print(f"Positive Sentences: {positive_percentage:.2f}%")
+print(f"Neutral Sentences: {neutral_percentage:.2f}%")
+print(f"Negative Sentences: {negative_percentage:.2f}%")
+print(f"Very Negative Sentences: {very_negative_percentage:.2f}%")
+
+
+# Print some examples for each category
+def print_examples(label, examples):
+    print(f"\nExamples of {label} sentences:")
+    for example in examples[:3]:  # Print up to 3 examples
+        print(f"- {example}")
+
+
+print_examples("Very Positive", very_positive_examples)
+print_examples("Positive", positive_examples)
+print_examples("Neutral", neutral_examples)
+print_examples("Negative", negative_examples)
+print_examples("Very Negative", very_negative_examples)
