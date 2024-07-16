@@ -9,6 +9,8 @@ import tensorflow as tf
 import string
 import sys
 
+
+
 sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf-8', buffering=1)
 # Function to tokenize text
 stopwords = set(nltk.corpus.stopwords.words('english'))
@@ -103,10 +105,17 @@ for word, idx in word_to_int.items():
     else:
         embedding_matrix[idx] = np.random.normal(size=(embedding_dim,))
 
+# Create the embedding layer separately
+embedding_layer = tf.keras.layers.Embedding(input_dim=len(vocab), output_dim=embedding_dim,
+                                            input_length=sequence_length, trainable=False)
+
+# Set the weights of the embedding layer
+embedding_layer.build((None,))  # If you have not built the model yet
+embedding_layer.set_weights([embedding_matrix])
+
 # Build the RNN model with the pre-trained embeddings
 rnn_model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(input_dim=len(vocab), output_dim=embedding_dim, weights=[embedding_matrix],
-                              input_length=sequence_length, trainable=False),
+    embedding_layer,
     tf.keras.layers.SimpleRNN(100, return_sequences=False),
     tf.keras.layers.Dense(len(vocab), activation='softmax')
 ])
@@ -115,21 +124,17 @@ rnn_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['a
 
 # Build the LSTM model with the pre-trained embeddings
 lstm_model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(input_dim=len(vocab), output_dim=embedding_dim, weights=[embedding_matrix],
-                              input_length=sequence_length, trainable=False),
+    embedding_layer,
     tf.keras.layers.LSTM(100, return_sequences=False),
     tf.keras.layers.Dense(len(vocab), activation='softmax')
 ])
 
 lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
 # Train the RNN model
 rnn_history = rnn_model.fit(X, y, epochs=10, batch_size=64, validation_split=0.2)
 
 # Train the LSTM model
 lstm_history = lstm_model.fit(X, y, epochs=10, batch_size=64, validation_split=0.2)
-
-
 # Function to predict the next word using the RNN model
 def predict_next_word_rnn(model, sequence):
     sequence = [word_to_int[word] for word in sequence]
@@ -160,9 +165,10 @@ print(f"RNN next word prediction: {next_word_rnn}")
 next_word_lstm = predict_next_word_lstm(lstm_model, test_sequence)
 print(f"LSTM next word prediction: {next_word_lstm}")
 # Compare performance
+
 import matplotlib.pyplot as plt
 
-# Plot training & validation accuracy values
+#Plot training & validation accuracy values
 plt.figure(figsize=(12, 6))
 
 plt.subplot(1, 2, 1)
@@ -184,7 +190,7 @@ plt.legend(['Train', 'Validation'], loc='upper left')
 plt.tight_layout()
 plt.show()
 
-# Plot training & validation loss values
+#Plot training & validation loss values
 plt.figure(figsize=(12, 6))
 
 plt.subplot(1, 2, 1)
@@ -220,8 +226,8 @@ from nltk.tokenize import sent_tokenize
 # nltk.download('punkt')
 
 # Load text data
-with open('data_turing.txt', 'r', encoding='utf-8') as file:
-    data_turing = file.read()
+# with open('data_turing.txt', 'r', encoding='utf-8') as file:
+#     data_turing = file.read()
 
 # Select 5 partial sentences from your corpus
 sentences_turing = sent_tokenize(data_turing)
